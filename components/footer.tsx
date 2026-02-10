@@ -1,6 +1,13 @@
+"use client"
+
 import Link from "next/link"
+import { useState, useEffect } from "react"
 
 export function Footer() {
+  const [year, setYear] = useState<number | null>(null)
+  useEffect(() => {
+    setYear(new Date().getFullYear())
+  }, [])
   return (
     <footer className="border-t border-border/50 bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12">
@@ -61,7 +68,7 @@ export function Footer() {
 
         <div className="mt-10 border-t border-border/50 pt-6 text-center">
           <p className="text-xs text-muted-foreground">
-            {"© "}{new Date().getFullYear()}{" Vorqenox. All rights reserved."}
+            {year ? `© ${year} Vorqenox. All rights reserved.` : "© Vorqenox. All rights reserved."}
           </p>
         </div>
       </div>
