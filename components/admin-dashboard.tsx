@@ -19,10 +19,13 @@ import {
   ChevronDown,
   Check,
   AlertCircle,
+  Zap,
+  BarChart3,
+  Megaphone,
 } from "lucide-react"
-import type { Article, SiteSettings, SocialProofItem } from "@/lib/data"
+import type { Article, SiteSettings, SocialProofItem, ArticleCounter } from "@/lib/data"
 
-type Tab = "settings" | "posts" | "social-proof"
+type Tab = "settings" | "posts" | "social-proof" | "neon"
 
 // ---- Toast Notification ----
 function Toast({
@@ -84,6 +87,11 @@ export function AdminDashboard() {
       key: "posts" as Tab,
       label: "ادارة المقالات",
       icon: <FileText className="h-4 w-4" />,
+    },
+    {
+      key: "neon" as Tab,
+      label: "مدير النيون",
+      icon: <Zap className="h-4 w-4" />,
     },
     {
       key: "social-proof" as Tab,
@@ -167,6 +175,16 @@ export function AdminDashboard() {
               <PostManager showToast={showToast} />
             </motion.div>
           )}
+          {activeTab === "neon" && (
+            <motion.div
+              key="neon"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <NeonManager showToast={showToast} />
+            </motion.div>
+          )}
           {activeTab === "social-proof" && (
             <motion.div
               key="social"
@@ -194,6 +212,169 @@ export function AdminDashboard() {
   )
 }
 
+// ---- Neon Manager Panel ----
+function NeonManager({
+  showToast,
+}: {
+  showToast: (msg: string, type?: "success" | "error") => void
+}) {
+  const [settings, setSettings] = useState<SiteSettings | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data: SiteSettings) => {
+        setSettings(data)
+        setLoading(false)
+      })
+      .catch(() => {
+        showToast("فشل في تحميل اعدادات النيون", "error")
+        setLoading(false)
+      })
+  }, [showToast])
+
+  const handleSave = async () => {
+    if (!settings) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      })
+      if (!res.ok) throw new Error()
+      showToast("تم حفظ اعدادات النيون بنجاح")
+    } catch {
+      showToast("فشل في حفظ اعدادات النيون", "error")
+    }
+    setSaving(false)
+  }
+
+  if (loading || !settings) return <LoadingSkeleton />
+
+  return (
+    <div className="space-y-6">
+      {/* Glow Intensity Slider */}
+      <SectionCard title="شدة التوهج" icon={<Zap className="h-4 w-4" />}>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">{"مستوى الشدة"}</span>
+            <span className="text-sm font-bold text-primary">
+              {settings.neonIntensity ?? 70}%
+            </span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={settings.neonIntensity ?? 70}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                neonIntensity: parseInt(e.target.value),
+              })
+            }
+            className="w-full accent-primary"
+            style={{
+              background: `linear-gradient(to right, hsl(var(--primary)) ${settings.neonIntensity ?? 70}%, hsl(var(--secondary)) ${settings.neonIntensity ?? 70}%)`,
+            }}
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>0% - مطفأ</span>
+            <span>50% - متوسط</span>
+            <span>100% - اقصى توهج</span>
+          </div>
+          {/* Preview */}
+          <div
+            className="mt-4 flex h-20 items-center justify-center rounded-xl border border-primary/30"
+            style={{
+              boxShadow: `0 0 ${(settings.neonIntensity ?? 70) * 0.5}px ${settings.neonColor}${Math.round(((settings.neonIntensity ?? 70) / 100) * 60).toString(16).padStart(2, "0")}`,
+              background: "rgba(255,255,255,0.02)",
+            }}
+          >
+            <span
+              className="text-lg font-bold"
+              style={{
+                color: settings.neonColor,
+                textShadow: `0 0 ${(settings.neonIntensity ?? 70) * 0.3}px ${settings.neonColor}`,
+              }}
+            >
+              معاينة التوهج
+            </span>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* RGB Category Colors */}
+      <SectionCard title="الوان النيون حسب التصنيف" icon={<Palette className="h-4 w-4" />}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(settings.neonCategoryColors || []).map((cc, i) => (
+            <div key={cc.category} className="flex items-center gap-3 rounded-lg border border-border bg-secondary/50 p-3">
+              <input
+                type="color"
+                value={cc.color}
+                onChange={(e) => {
+                  const newColors = [...(settings.neonCategoryColors || [])]
+                  newColors[i] = { ...newColors[i], color: e.target.value }
+                  setSettings({ ...settings, neonCategoryColors: newColors })
+                }}
+                className="h-8 w-12 cursor-pointer rounded border border-border bg-transparent"
+              />
+              <div className="flex-1">
+                <span className="text-xs font-medium text-foreground capitalize">
+                  {cc.category.replace("-", " ")}
+                </span>
+                <span className="block text-[10px] font-mono text-muted-foreground" dir="ltr">
+                  {cc.color}
+                </span>
+              </div>
+              <div
+                className="h-6 w-6 rounded-full"
+                style={{
+                  backgroundColor: cc.color,
+                  boxShadow: `0 0 10px ${cc.color}`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* Page Placement Toggles */}
+      <SectionCard title="اماكن عرض النيون" icon={<Globe className="h-4 w-4" />}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ToggleSwitch
+            label="الصفحة الرئيسية"
+            description="عرض تأثيرات النيون على الصفحة الرئيسية"
+            checked={settings.neonShowOnHome !== false}
+            onChange={(v) => setSettings({ ...settings, neonShowOnHome: v })}
+          />
+          <ToggleSwitch
+            label="صفحات المقالات"
+            description="عرض تأثيرات النيون على صفحات المقالات"
+            checked={settings.neonShowOnArticle !== false}
+            onChange={(v) => setSettings({ ...settings, neonShowOnArticle: v })}
+          />
+        </div>
+      </SectionCard>
+
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={saving}
+        className="flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50"
+      >
+        <Save className="h-4 w-4" />
+        {saving ? "جاري الحفظ..." : "حفظ اعدادات النيون"}
+      </button>
+    </div>
+  )
+}
+
 // ---- Site Settings Panel ----
 function SiteSettingsPanel({
   showToast,
@@ -208,7 +389,7 @@ function SiteSettingsPanel({
     setLoading(true)
     fetch("/api/settings")
       .then((r) => r.json())
-      .then((data) => {
+      .then((data: SiteSettings) => {
         setSettings(data)
         setLoading(false)
       })
@@ -279,7 +460,7 @@ function SiteSettingsPanel({
 
       {/* Color Picker */}
       <SectionCard
-        title="لون النيون"
+        title="اللون الاساسي للنيون"
         icon={<Palette className="h-4 w-4" />}
       >
         <div className="flex items-center gap-4">
@@ -310,21 +491,66 @@ function SiteSettingsPanel({
         </div>
       </SectionCard>
 
+      {/* Ad Master Switches */}
+      <SectionCard
+        title="مفاتيح الاعلانات"
+        icon={<Megaphone className="h-4 w-4" />}
+      >
+        <p className="mb-4 text-xs text-muted-foreground">
+          {"تحكم في اظهار واخفاء اماكن الاعلانات في جميع الصفحات. عند الاغلاق يتم اخفاء المكان بالكامل بدون فراغات."}
+        </p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <ToggleSwitch
+            label="اعلان علوي"
+            description="اعلى الصفحة - 728x90"
+            checked={settings.adToggles?.top !== false}
+            onChange={(v) =>
+              setSettings({
+                ...settings,
+                adToggles: { ...settings.adToggles, top: v },
+              })
+            }
+          />
+          <ToggleSwitch
+            label="اعلان وسطي"
+            description="وسط الصفحة - 728x90"
+            checked={settings.adToggles?.middle !== false}
+            onChange={(v) =>
+              setSettings({
+                ...settings,
+                adToggles: { ...settings.adToggles, middle: v },
+              })
+            }
+          />
+          <ToggleSwitch
+            label="اعلان سفلي"
+            description="اسفل الصفحة - 728x90"
+            checked={settings.adToggles?.bottom !== false}
+            onChange={(v) =>
+              setSettings({
+                ...settings,
+                adToggles: { ...settings.adToggles, bottom: v },
+              })
+            }
+          />
+        </div>
+      </SectionCard>
+
       {/* Social Links */}
       <SectionCard
         title="روابط التواصل"
         icon={<LinkIcon className="h-4 w-4" />}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          {(["twitter", "telegram", "youtube", "instagram"] as const).map(
+          {(["twitter", "telegram", "youtube", "instagram", "linkedin"] as const).map(
             (key) => (
               <div key={key}>
                 <label className="mb-1.5 block text-xs capitalize text-muted-foreground">
-                  {key}
+                  {key === "linkedin" ? "LinkedIn" : key}
                 </label>
                 <input
                   type="text"
-                  value={settings.socialLinks[key]}
+                  value={(settings.socialLinks as Record<string, string>)[key] || ""}
                   onChange={(e) =>
                     setSettings({
                       ...settings,
@@ -336,7 +562,11 @@ function SiteSettingsPanel({
                   }
                   className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
                   dir="ltr"
-                  placeholder={`https://${key}.com/...`}
+                  placeholder={
+                    key === "linkedin"
+                      ? "https://linkedin.com/in/..."
+                      : `https://${key}.com/...`
+                  }
                 />
               </div>
             )
@@ -424,6 +654,15 @@ function PostManager({
     }
   }
 
+  const defaultCounter: ArticleCounter = {
+    enabled: false,
+    mode: "fixed",
+    fixedValue: 0,
+    randomMin: 500,
+    randomMax: 1200,
+    label: "Downloads",
+  }
+
   const newArticle = (): Article => ({
     id: "",
     title: "",
@@ -443,6 +682,7 @@ function PostManager({
     enableAds: true,
     enableTimer: true,
     enableViralLock: false,
+    counter: { ...defaultCounter },
     createdAt: "",
     updatedAt: "",
   })
@@ -542,6 +782,11 @@ function PostManager({
                       قفل فيروسي
                     </span>
                   )}
+                  {article.counter?.enabled && (
+                    <span className="rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] text-purple-400">
+                      عداد
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -605,11 +850,28 @@ function ArticleEditor({
   onSave: (article: Article) => void
   onCancel: () => void
 }) {
-  const [form, setForm] = useState<Article>(article)
+  const [form, setForm] = useState<Article>({
+    ...article,
+    counter: article.counter || {
+      enabled: false,
+      mode: "fixed",
+      fixedValue: 0,
+      randomMin: 500,
+      randomMax: 1200,
+      label: "Downloads",
+    },
+  })
   const [saving, setSaving] = useState(false)
 
   const update = (field: keyof Article, value: unknown) => {
     setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const updateCounter = (field: keyof ArticleCounter, value: unknown) => {
+    setForm((prev) => ({
+      ...prev,
+      counter: { ...prev.counter, [field]: value },
+    }))
   }
 
   const generateSlug = (title: string) => {
@@ -783,6 +1045,132 @@ function ArticleEditor({
             checked={form.enableViralLock}
             onChange={(v) => update("enableViralLock", v)}
           />
+        </div>
+      </SectionCard>
+
+      {/* Counter Section */}
+      <SectionCard
+        title="عداد المقال"
+        icon={<BarChart3 className="h-4 w-4" />}
+      >
+        <div className="space-y-4">
+          <ToggleSwitch
+            label="تفعيل العداد"
+            description="عرض عداد التحميلات او المستخدمين"
+            checked={form.counter.enabled}
+            onChange={(v) => updateCounter("enabled", v)}
+          />
+
+          {form.counter.enabled && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-4"
+            >
+              {/* Mode Selection */}
+              <div>
+                <label className="mb-1.5 block text-xs text-muted-foreground">
+                  نوع العداد
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateCounter("mode", "fixed")}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                      form.counter.mode === "fixed"
+                        ? "border-primary/50 bg-primary/10 text-primary"
+                        : "border-border bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    رقم ثابت
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateCounter("mode", "random")}
+                    className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                      form.counter.mode === "random"
+                        ? "border-primary/50 bg-primary/10 text-primary"
+                        : "border-border bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    نطاق عشوائي
+                  </button>
+                </div>
+              </div>
+
+              {form.counter.mode === "fixed" ? (
+                <div>
+                  <label className="mb-1.5 block text-xs text-muted-foreground">
+                    القيمة الثابتة
+                  </label>
+                  <input
+                    type="number"
+                    value={form.counter.fixedValue}
+                    onChange={(e) =>
+                      updateCounter("fixedValue", parseInt(e.target.value) || 0)
+                    }
+                    className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                    dir="ltr"
+                    placeholder="15000"
+                  />
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-xs text-muted-foreground">
+                      الحد الادنى
+                    </label>
+                    <input
+                      type="number"
+                      value={form.counter.randomMin}
+                      onChange={(e) =>
+                        updateCounter(
+                          "randomMin",
+                          parseInt(e.target.value) || 0
+                        )
+                      }
+                      className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                      dir="ltr"
+                      placeholder="500"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs text-muted-foreground">
+                      الحد الاقصى
+                    </label>
+                    <input
+                      type="number"
+                      value={form.counter.randomMax}
+                      onChange={(e) =>
+                        updateCounter(
+                          "randomMax",
+                          parseInt(e.target.value) || 0
+                        )
+                      }
+                      className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                      dir="ltr"
+                      placeholder="1200"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="mb-1.5 block text-xs text-muted-foreground">
+                  تسمية العداد
+                </label>
+                <input
+                  type="text"
+                  value={form.counter.label}
+                  onChange={(e) => updateCounter("label", e.target.value)}
+                  className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                  dir="ltr"
+                  placeholder="Downloads / Users / Claims"
+                />
+              </div>
+            </motion.div>
+          )}
         </div>
       </SectionCard>
 

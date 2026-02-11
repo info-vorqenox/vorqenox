@@ -63,9 +63,20 @@ export function CategoryTabs({ articles }: { articles: Article[] }) {
             <Link
               key={article.id}
               href={`/article/${article.slug}`}
-              className="group flex gap-4 rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-primary/40"
+              className="group flex gap-4 rounded-xl border border-border/50 p-4 transition-all duration-300 hover:border-primary/40 hover:-translate-y-1"
+              style={{
+                background: "rgba(255,255,255,0.02)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+              }}
             >
-              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <div
+                className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl"
+                style={{
+                  background: "rgba(0,243,255,0.08)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                }}
+              >
                 <span className="text-lg font-bold text-primary">
                   {article.title.charAt(0)}
                 </span>

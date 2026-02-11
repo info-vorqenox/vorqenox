@@ -2,12 +2,16 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
+import type { SiteSettings } from "@/lib/data"
 
-export function Footer() {
+export function Footer({ settings }: { settings?: SiteSettings | null }) {
   const [year, setYear] = useState<number | null>(null)
   useEffect(() => {
     setYear(new Date().getFullYear())
   }, [])
+
+  const linkedinUrl = settings?.socialLinks?.linkedin
+
   return (
     <footer className="border-t border-border/50 bg-card">
       <div className="mx-auto max-w-7xl px-4 py-12">
@@ -57,18 +61,30 @@ export function Footer() {
             <h3 className="mb-3 text-sm font-semibold text-foreground">
               Contact
             </h3>
-            <a
-              href="mailto:Vorqenox@gmail.com"
-              className="text-sm text-primary transition-opacity hover:opacity-80"
-            >
-              Vorqenox@gmail.com
-            </a>
+            <div className="flex flex-col gap-2">
+              <a
+                href="mailto:Vorqenox@gmail.com"
+                className="text-sm text-primary transition-opacity hover:opacity-80"
+              >
+                Vorqenox@gmail.com
+              </a>
+              {linkedinUrl && (
+                <a
+                  href={linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  LinkedIn Profile
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="mt-10 border-t border-border/50 pt-6 text-center">
           <p className="text-xs text-muted-foreground">
-            {year ? `© ${year} Vorqenox. All rights reserved.` : "© Vorqenox. All rights reserved."}
+            {year ? `\u00A9 ${year} Vorqenox. All rights reserved.` : "\u00A9 Vorqenox. All rights reserved."}
           </p>
         </div>
       </div>

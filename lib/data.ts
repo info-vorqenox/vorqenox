@@ -1,6 +1,15 @@
 // In-memory data store for the platform (will persist during server runtime)
 // In production, replace with a database
 
+export interface ArticleCounter {
+  enabled: boolean
+  mode: "fixed" | "random"
+  fixedValue: number
+  randomMin: number
+  randomMax: number
+  label: string
+}
+
 export interface Article {
   id: string
   title: string
@@ -15,19 +24,35 @@ export interface Article {
   enableAds: boolean
   enableTimer: boolean
   enableViralLock: boolean
+  counter: ArticleCounter
   createdAt: string
   updatedAt: string
+}
+
+export interface NeonCategoryColor {
+  category: string
+  color: string
 }
 
 export interface SiteSettings {
   siteName: string
   logoUrl: string
   neonColor: string
+  neonIntensity: number
+  neonCategoryColors: NeonCategoryColor[]
+  neonShowOnHome: boolean
+  neonShowOnArticle: boolean
   socialLinks: {
     twitter: string
     telegram: string
     youtube: string
     instagram: string
+    linkedin: string
+  }
+  adToggles: {
+    top: boolean
+    middle: boolean
+    bottom: boolean
   }
 }
 
@@ -62,6 +87,7 @@ const defaultArticles: Article[] = [
     enableAds: true,
     enableTimer: true,
     enableViralLock: false,
+    counter: { enabled: true, mode: "random", fixedValue: 15000, randomMin: 8000, randomMax: 25000, label: "Downloads" },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -86,6 +112,7 @@ const defaultArticles: Article[] = [
     enableAds: true,
     enableTimer: true,
     enableViralLock: false,
+    counter: { enabled: true, mode: "fixed", fixedValue: 12500, randomMin: 500, randomMax: 1200, label: "Downloads" },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -110,6 +137,7 @@ const defaultArticles: Article[] = [
     enableAds: true,
     enableTimer: true,
     enableViralLock: true,
+    counter: { enabled: true, mode: "random", fixedValue: 50000, randomMin: 20000, randomMax: 80000, label: "Downloads" },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -134,6 +162,7 @@ const defaultArticles: Article[] = [
     enableAds: true,
     enableTimer: true,
     enableViralLock: true,
+    counter: { enabled: false, mode: "fixed", fixedValue: 0, randomMin: 500, randomMax: 1200, label: "Claims" },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -158,6 +187,7 @@ const defaultArticles: Article[] = [
     enableAds: true,
     enableTimer: true,
     enableViralLock: false,
+    counter: { enabled: true, mode: "random", fixedValue: 5000, randomMin: 3000, randomMax: 15000, label: "Users" },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -182,6 +212,7 @@ const defaultArticles: Article[] = [
     enableAds: true,
     enableTimer: true,
     enableViralLock: false,
+    counter: { enabled: true, mode: "fixed", fixedValue: 45000, randomMin: 1000, randomMax: 5000, label: "Downloads" },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -229,11 +260,26 @@ const defaultSettings: SiteSettings = {
   siteName: "Vorqenox",
   logoUrl: "",
   neonColor: "#00f3ff",
+  neonIntensity: 70,
+  neonCategoryColors: [
+    { category: "apps", color: "#00f3ff" },
+    { category: "games", color: "#a855f7" },
+    { category: "ai-tools", color: "#06b6d4" },
+    { category: "gift-cards", color: "#f59e0b" },
+  ],
+  neonShowOnHome: true,
+  neonShowOnArticle: true,
   socialLinks: {
     twitter: "",
     telegram: "",
     youtube: "",
     instagram: "",
+    linkedin: "",
+  },
+  adToggles: {
+    top: true,
+    middle: true,
+    bottom: true,
   },
 }
 

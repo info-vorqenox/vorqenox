@@ -87,6 +87,17 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes blink-red-border {
+  0%, 100% {
+    border-color: rgba(239, 68, 68, 0.6);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.15), 0 0 20px rgba(239, 68, 68, 0.08);
+  }
+  50% {
+    border-color: rgba(239, 68, 68, 0.15);
+    box-shadow: 0 0 2px rgba(239, 68, 68, 0.05);
+  }
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
