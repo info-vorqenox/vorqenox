@@ -76,7 +76,14 @@ export function SwiperSection({ articles }: { articles: Article[] }) {
               href={`/article/${article.slug}`}
               className="group block w-72"
             >
-              <div className="overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:border-primary/40">
+              <div
+                className="overflow-hidden rounded-xl border border-border/50 transition-all duration-300 hover:border-primary/40 hover:-translate-y-1"
+                style={{
+                  background: "rgba(255,255,255,0.02)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                }}
+              >
                 <div className="relative h-40 bg-secondary">
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-transparent">
                     <span className="text-4xl font-bold text-primary/20">
